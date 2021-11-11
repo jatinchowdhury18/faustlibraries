@@ -85,15 +85,15 @@ sinwaveform(tablesize) =
 coswaveform(tablesize) = 
     cos(float(ba.period(tablesize)) * (2.0 * ma.PI) / float(tablesize));
     
-    
-// Phasor to be used with a `rdtable` with a generic `reset`, to be specialised in concrete use-cases.
-// `mem` is used at last operation to correctly start at 0.
-phasor_imp(tablesize, freq, c, p) = inc : (+ : ma.decimal) ~ reset(clk, p) : *(float(tablesize)) : mem
+// Generic phasor with `reset` and `phase` parameters to be specialised in concrete use-cases.
+// prefix(1, clk) is used to correctly start the phasor with the `phase` value.
+phasor_imp(freq, reset, phase) = (select2(prefix(1, clk), +(inc), phase) : ma.decimal) ~ _
 with {
-    clk = c > 0;
-    inc = freq/float(ma.SR);
-    reset(clk, p, x) = x * (1 - clk) + clk * p;
+    clk = reset>0;
+    inc = freq/ma.SR;
 };
+
+phasor_table(tablesize, freq, reset, phase) = phasor_imp(freq, reset, phase) : *(float(tablesize));
 
 //-----------------------`(os.)phasor`------------------------
 // A simple phasor to be used with a `rdtable`.
@@ -110,7 +110,7 @@ with {
 // * `tablesize`: the table size
 // * `freq`: the frequency in Hz
 //------------------------------------------------------------
-phasor(tablesize, freq) = phasor_imp(tablesize, freq, 0, 0);
+phasor(tablesize, freq) = phasor_table(tablesize, freq, 0, 0);
 
 // Old explicit version:
 // phasor(tablesize,freq) = freq/float(ma.SR) : (+ : ma.decimal) ~ _ : *(float(tablesize));
@@ -128,10 +128,10 @@ phasor(tablesize, freq) = phasor_imp(tablesize, freq, 0, 0);
 //
 // * `tablesize`: the table size
 // * `freq`: the frequency in Hz
-// * `c`: a clock signal, `c>0` resets phase to 0
+// * `clk`: a clock signal, `clk>0` reset phase to 0
 //---------------------------------------------------------
 // Author: Mike Olsen, revised by Stéphane Letz
-hs_phasor(tablesize, freq, c) = phasor_imp(tablesize, freq, c, 0);
+hs_phasor(tablesize, freq, clk) = phasor_table(tablesize, freq, clk, 0);
 
 //-----------------------`(os.)hsp_phasor`------------------------
 // Hardsyncing phasor with selectable phase to be used with an `rdtable`.
@@ -139,18 +139,18 @@ hs_phasor(tablesize, freq, c) = phasor_imp(tablesize, freq, c, 0);
 // #### Usage
 //
 // ```
-// hsp_phasor(tablesize,freq,p,c)
+// hsp_phasor(tablesize,freq,clk,phase)
 // ```
 //
 // Where:
 //
 // * `tablesize`: the table size
 // * `freq`: the frequency in Hz
-// * `p`: phase init (0 <= `p` <=1)
-// * `c`: a clock signal, `c>0` resets phase to 0
+// * `clk`: a clock signal, `clk>0` reset phase to 0
+// * `phase`: phase between 0 and 1
 //---------------------------------------------------------
 // Author: Christophe Lebreton, revised by Stéphane Letz
-hsp_phasor(tablesize, freq, c, p) = phasor_imp(tablesize, freq, c, p);
+hsp_phasor(tablesize, freq, clk, phase) = phasor_table(tablesize, freq, clk, phase);
 
 //-----------------------`(os.)oscsin`------------------------
 // Sine wave oscillator.
@@ -177,16 +177,16 @@ with {
 // #### Usage
 //
 // ```
-// hs_oscsin(freq,c) : _
+// hs_oscsin(freq,clk) : _
 // ```
 //
 // Where:
 //
 // * `freq`: the frequency in Hz
-// * `c`: a clock signal, `c>0` resets phase to 0
+// * `clk`: a clock signal, `clk>0` resets phase to 0
 //---------------------------------------------------------
 // Author: Mike Olsen
-hs_oscsin(freq,c) = rdtable(tablesize, sinwaveform(tablesize), int(hs_phasor(tablesize,freq,c)))
+hs_oscsin(freq,clk) = rdtable(tablesize, sinwaveform(tablesize), int(hs_phasor(tablesize,freq,clk)))
 with {
     tablesize = pl.tablesize;
 };
@@ -215,16 +215,16 @@ with {
 // #### Usage
 //
 // ```
-// hs_osccos(freq,c) : _
+// hs_osccos(freq,clk) : _
 // ```
 //
 // Where:
 //
 // * `freq`: the frequency in Hz
-// * `c`: a clock signal, `c>0` resets phase to 0
+// * `clk`: a clock signal, `clk>0` resets phase to 0
 //---------------------------------------------------------
 // Author: Stéphane Letz
-hs_osccos(freq,c) = rdtable(tablesize, coswaveform(tablesize), int(hs_phasor(tablesize,freq,c)))
+hs_osccos(freq,clk) = rdtable(tablesize, coswaveform(tablesize), int(hs_phasor(tablesize,freq,clk)))
 with {
     tablesize = pl.tablesize;
 };
@@ -327,7 +327,7 @@ lf_imptrain(freq) = lf_sawpos(freq)<:-(mem)<0; // definition below
 // #### Usage
 //
 // ```
-// lf_pulsetrainpos(freq,duty) : _
+// lf_pulsetrainpos(freq, duty) : _
 // ```
 //
 // Where:
@@ -386,7 +386,7 @@ lf_squarewavepos(freq) = lf_pulsetrainpos(freq,0.5);
 //
 // * `freq`: frequency in Hz
 //------------------------------------------------------------
-lf_squarewave(freq) = 2*lf_squarewavepos(freq) - 1;
+lf_squarewave(freq) = 2.0*lf_squarewavepos(freq) - 1.0;
 // squarewave = lf_squarewave; // for backward compatibility
 
 
@@ -403,10 +403,10 @@ lf_squarewave(freq) = 2*lf_squarewavepos(freq) - 1;
 //
 // * `freq`: frequency in Hz
 //------------------------------------------------------------
-lf_trianglepos(freq) = 1-abs(saw1(freq)); // saw1 defined below
+lf_trianglepos(freq) = 1.0-abs(saw1(freq)); // saw1 defined below
 
 //----------`(os.)lf_triangle`----------
-// Positive unit-amplitude LF triangle wave
+// Positive unit-amplitude LF triangle wave.
 // `lf_triangle` is a standard Faust function.
 //
 // #### Usage
@@ -421,7 +421,7 @@ lf_trianglepos(freq) = 1-abs(saw1(freq)); // saw1 defined below
 //------------------------------------------------------------
 // Author: Bart Brouns
 // License: STK-4.3
-lf_triangle(freq) = 2*lf_trianglepos(freq) - 1;
+lf_triangle(freq) = 2.0*lf_trianglepos(freq) - 1.0;
 
 //================== Low Frequency Sawtooths ====================
 // Sawtooth waveform oscillators for virtual analog synthesis et al.
@@ -452,23 +452,6 @@ lf_triangle(freq) = 2*lf_trianglepos(freq) - 1;
 //---------------------------------------------------------
 lf_rawsaw(periodsamps) = (_,periodsamps : fmod) ~ +(1.0);
 
-//-----------------`(os.)lf_sawpos_phase`--------------------
-// Simple sawtooth waveform oscillator between 0 and 1
-// with phase control.
-//
-// #### Usage
-//
-// ```
-// lf_sawpos_phase(phase,freq) : _
-// ```
-//
-// Where:
-//
-// * `phase`: phase
-// * `freq`: frequency in Hz
-//---------------------------------------------------------
-lf_sawpos_phase(phase,freq) = (+(phase-phase') : ma.frac) ~ +(freq/ma.SR);
-
 //-----------------`(os.)lf_sawpos`--------------------
 // Simple sawtooth waveform oscillator between 0 and 1.
 //
@@ -483,13 +466,32 @@ lf_sawpos_phase(phase,freq) = (+(phase-phase') : ma.frac) ~ +(freq/ma.SR);
 // * `freq`: frequency in Hz
 //
 //---------------------------------------------------------
-// Author: Bart Brouns
+// Author: Bart Brouns, revised by Stéphane Letz
 // License: STK-4.3
-// MarkDown: Romain Michon
-lf_sawpos(freq) = ma.frac ~ +(freq/ma.SR);
+lf_sawpos(freq) = phasor_imp(freq, 0, 0);
+
+
+//-----------------`(os.)lf_sawpos_phase`--------------------
+// Simple sawtooth waveform oscillator between 0 and 1
+// with phase control.
+//
+// #### Usage
+//
+// ```
+// lf_sawpos_phase(freq, phase) : _
+// ```
+//
+// Where:
+//
+// * `freq`: frequency in Hz
+// * `phase`: phase between 0 and 1
+//---------------------------------------------------------
+// Author: Bart Brouns, revised by Stéphane Letz
+// License: STK-4.3
+lf_sawpos_phase(freq,phase) = phasor_imp(freq, 0, phase);
 
 //-----------------`(os.)lf_sawpos_reset`--------------------
-// Simple sawtooth waveform oscillator between 0 and 1.
+// Simple sawtooth waveform oscillator between 0 and 1
 // with reset.
 //
 // #### Usage
@@ -504,9 +506,9 @@ lf_sawpos(freq) = ma.frac ~ +(freq/ma.SR);
 // * `reset`: reset the oscillator to 0
 //
 //---------------------------------------------------------
-// Author: Bart Brouns
+// Author: Bart Brouns, revised by Stéphane Letz
 // License: STK-4.3
-lf_sawpos_reset(freq,reset) = ma.frac * (reset == 0) ~ +(freq/ma.SR);
+lf_sawpos_reset(freq,reset) = phasor_imp(freq, reset, 0);
 
 //-----------------`(os.)lf_sawpos_phase_reset`--------------------
 // Simple sawtooth waveform oscillator between 0 and 1.
@@ -525,9 +527,9 @@ lf_sawpos_reset(freq,reset) = ma.frac * (reset == 0) ~ +(freq/ma.SR);
 // * `reset`: reset the oscillator to 0
 //
 //---------------------------------------------------------
-// Author: Bart Brouns
+// Author: Bart Brouns, revised by Stéphane Letz
 // License: STK-4.3
-lf_sawpos_phase_reset(freq,phase,reset) = lf_sawpos_reset(freq,reset) + phase : ma.frac;
+lf_sawpos_phase_reset(freq,phase,reset) = phasor_imp(freq, reset, phase);
 
 //-----------------`(os.)lf_saw`--------------------
 // Simple sawtooth waveform.
@@ -605,7 +607,7 @@ lf_saw(freq) = saw1(freq);
 //
 // * `N`: polynomial order
 // * `freq`: frequency in Hz
-// * `phase`: phase
+// * `phase`: phase between 0 and 1
 //===================================================================
 // --- sawN for N = 1 to 6 ---
 //We can do 6, but 5 and 6 have noise at low fundamentals: MAX_SAW_ORDER = 6; MAX_SAW_ORDER_NEXTPOW2 = 8;
