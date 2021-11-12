@@ -87,9 +87,6 @@ coswaveform(tablesize) =
     cos(float(ba.period(tablesize)) * (2.0 * ma.PI) / float(tablesize));
     
 
-// Faster phasor version for default case
-phasor_imp(freq, 0, 0) = (+(freq/ma.SR) : ma.decimal) ~ _ : mem; 
-
 // Generic phasor with `reset` and `phase` parameters to be specialised in concrete use-cases.
 phasor_imp(freq, reset, phase) = (select2(reset, +(freq/ma.SR), phase) : ma.decimal) ~ _;
 
@@ -111,7 +108,8 @@ phasor_table(tablesize, freq, reset, phase) = phasor_imp(freq, reset, phase) : *
 // * `tablesize`: the table size
 // * `freq`: the frequency in Hz
 //------------------------------------------------------------
-phasor(tablesize, freq) = phasor_table(tablesize, freq, 0, 0);
+// Using an initial '1' to reset
+phasor(tablesize, freq) = phasor_table(tablesize, freq, (1-1'), 0);
 
 // Old explicit version:
 // phasor(tablesize,freq) = freq/float(ma.SR) : (+ : ma.decimal) ~ _ : *(float(tablesize));
