@@ -484,7 +484,8 @@ lf_rawsaw(periodsamps) = (_,periodsamps : fmod) ~ +(1.0);
 //---------------------------------------------------------
 // Author: Bart Brouns, revised by Stéphane Letz
 // License: STK-4.3
-lf_sawpos(freq) = phasor_imp(freq, 0, 0);
+// Using an initial '1' to reset
+lf_sawpos(freq) = phasor_imp(freq, (1-1'), 0);
 
 
 //-----------------`(os.)lf_sawpos_phase`--------------------
