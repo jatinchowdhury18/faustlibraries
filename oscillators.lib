@@ -88,6 +88,7 @@ coswaveform(tablesize) =
     
 
 // Generic phasor with `reset` and `phase` parameters to be specialised in concrete use-cases.
+// The `reset` must be 1 on first sample for the `phase` to be properly initialized.
 phasor_imp(freq, reset, phase) = (select2(reset, +(freq/ma.SR), phase) : ma.decimal) ~ _;
 
 // Version to be used with tables
@@ -111,11 +112,9 @@ phasor_table(tablesize, freq, reset, phase) = phasor_imp(freq, reset, phase) : *
 // Using an initial '1' to reset
 phasor(tablesize, freq) = phasor_table(tablesize, freq, (1-1'), 0);
 
-// Old explicit version:
-// phasor(tablesize,freq) = freq/float(ma.SR) : (+ : ma.decimal) ~ _ : *(float(tablesize));
 
 //-----------------------`(os.)hs_phasor`------------------------
-// Hardsyncing phasor to be used with an `rdtable`.
+// Hardsyncing phasor to be used with a `rdtable`.
 //
 // #### Usage
 //
@@ -135,7 +134,7 @@ hs_phasor(tablesize, freq, clk) = phasor_table(tablesize, freq, (1-1') | (clk>0)
 
 
 //-----------------------`(os.)hsp_phasor`------------------------
-// Hardsyncing phasor with selectable phase to be used with an `rdtable`.
+// Hardsyncing phasor with selectable phase to be used with a `rdtable`.
 //
 // #### Usage
 //
