@@ -119,7 +119,7 @@ phasor(tablesize, freq) = phasor_table(tablesize, freq, (1-1'), 0);
 // #### Usage
 //
 // ```
-// hs_phasor(tablesize,freq,c) :  _
+// hs_phasor(tablesize,freq,clk) :  _
 // ```
 //
 // Where:
@@ -627,7 +627,7 @@ lf_saw(freq) = saw1(freq);
 //
 // Where:
 //
-// * `N`: polynomial order
+// * `N`: polynomial order, known at compile time
 // * `freq`: frequency in Hz
 // * `phase`: phase between 0 and 1
 //===================================================================
@@ -674,11 +674,13 @@ saw2dpw(freq) = saw1(freq) <: * <: -(mem) : *(0.25'*ma.SR/freq); // inferior to 
 //------------------`(os.)saw3`--------------------------------
 // TODO: MarkDown doc in comments
 //--------------------------------------------------------
-saw3 = sawN(3); saw4 = sawN(4); saw5 = sawN(5); saw6 = sawN(6);
+saw3 = sawN(3); 
+saw4 = sawN(4); 
+saw5 = sawN(5); 
+saw6 = sawN(6);
 
 //------------------`(os.)sawtooth`--------------------------------
-// Alias-free sawtooth wave. 2nd order interpolation (based
-// on `saw2`).
+// Alias-free sawtooth wave. 2nd order interpolation (based on `saw2`).
 // `sawtooth` is a standard Faust function.
 //
 // #### Usage
@@ -705,8 +707,8 @@ sawtooth = saw2; // default choice for sawtooth signal - see also sawN
 
 //------------------`(os.)saw2f2`--------------------------------
 // TODO: MarkDown doc in comments
-//--------------------------------------------------------
-// --- Correction-filtered versions of saw2: saw2f2, saw2f4 ----
+//---------------------------------------------------------------
+// --- Correction-filtered versions of saw2: saw2f2, saw2f4 -----
 // The correction filter compensates "droop" near half the sampling rate.
 // See reference for sawN.
 saw2f2 = saw2 : cf2 with {
@@ -716,7 +718,7 @@ saw2f2 = saw2 : cf2 with {
 
 //------------------`(os.)saw2f4`--------------------------------
 // TODO: MarkDown doc in comments
-//--------------------------------------------------------
+//---------------------------------------------------------------
 saw2f4 = saw2 : cf4 with {
   cf4 = fi.iir((1.155727435125014, 2.285861038554662,
         1.430915027294021, 0.290713280893317, 0.008306401748854),
@@ -725,7 +727,7 @@ saw2f4 = saw2 : cf4 with {
 };
 
 //=========Bandlimited Pulse, Square, and Impulse Trains============
-// Bandlimited Pulse, Square, and Impulse Trains.
+// Bandlimited Pulse, Square and Impulse Trains.
 //
 // `pulsetrainN`, `pulsetrain`, `squareN`, `square`, `imptrain`, `imptrainN`,
 // `triangle`, `triangleN`
@@ -1137,7 +1139,7 @@ released under LGPL, STK-4.3, MIT, BSD, or a similar FOSS license.
 //=====================================================================
 
 //----------`(os.)CZsaw`----------
-// Oscillator that mimics the Casio CZ saw oscillator
+// Oscillator that mimics the Casio CZ saw oscillator.
 // `CZsaw` is a standard Faust function.
 //
 // #### Usage
@@ -1231,7 +1233,7 @@ CZsquare(fund, index) = CZ.squareChooseP(fund, index, 0);
 CZsquareP(fund, index) = CZ.squareChooseP(fund, index, 1);
 
 //----------`(os.)CZpulse`----------
-// Oscillator that mimics the Casio CZ pulse oscillator
+// Oscillator that mimics the Casio CZ pulse oscillator.
 // `CZpulse` is a standard Faust function.
 //
 // #### Usage
@@ -1278,7 +1280,7 @@ CZpulse(fund, index) = CZ.pulseChooseP(fund, index, 0);
 CZpulseP(fund, index) = CZ.pulseChooseP(fund, index, 1);
 
 //----------`(os.)CZsinePulse`----------
-// Oscillator that mimics the Casio CZ sine/pulse oscillator
+// Oscillator that mimics the Casio CZ sine/pulse oscillator.
 // `CZsinePulse` is a standard Faust function.
 //
 // #### Usage
@@ -1325,7 +1327,7 @@ CZsinePulse(fund, index) = CZ.sinePulseChooseP(fund, index, 0);
 CZsinePulseP(fund, index) = CZ.sinePulseChooseP(fund, index, 1);
 
 //----------`(os.)CZhalfSine`----------
-// Oscillator that mimics the Casio CZ half sine oscillator
+// Oscillator that mimics the Casio CZ half sine oscillator.
 // `CZhalfSine` is a standard Faust function.
 //
 // #### Usage
@@ -1372,7 +1374,7 @@ CZhalfSine(fund, index) = CZ.halfSineChooseP(fund, index, 0);
 CZhalfSineP(fund, index) = CZ.halfSineChooseP(fund, index, 1);
 
 //----------`(os.)CZresSaw`----------
-// Oscillator that mimics the Casio CZ resonant saw-tooth oscillator
+// Oscillator that mimics the Casio CZ resonant sawtooth oscillator.
 // `CZresSaw` is a standard Faust function.
 //
 // #### Usage
@@ -1395,7 +1397,7 @@ CZhalfSineP(fund, index) = CZ.halfSineChooseP(fund, index, 1);
 CZresSaw(fund,res) = CZ.resSaw(fund,res);
 
 //----------`(os.)CZresTriangle`----------
-// Oscillator that mimics the Casio CZ resonant triangle oscillator
+// Oscillator that mimics the Casio CZ resonant triangle oscillator.
 // `CZresTriangle` is a standard Faust function.
 //
 // #### Usage
@@ -1499,7 +1501,7 @@ CZ = environment {
 //===============================PolyBLEP-Based Oscillators=================================
 
 //----------`(os.)polyblep`----------
-// PolyBLEP residual function - used for smoothing steps in the audio signal.
+// PolyBLEP residual function, used for smoothing steps in the audio signal.
 //
 // #### Usage
 //
@@ -1526,19 +1528,19 @@ with {
 // #### Usage
 //
 // ```
-// polyblep_saw(f) : _
+// polyblep_saw(freq) : _
 // ```
 //
 // Where:
 //
-// * `f`: frequency in Hz 
+// * `freq`: frequency in Hz 
 //------------------------------------------------------------
 // Author: Jacek Wieczorek
-polyblep_saw(f) = naive - polyblep(Q , phase)
+polyblep_saw(freq) = naive - polyblep(Q , phase)
 with {
-    phase = phasor(1, f);
+    phase = phasor(1, freq);
     naive = 2 * phase - 1;
-    Q = f / ma.SR;
+    Q = freq / ma.SR;
 };
 
 //----------`(os.)polyblep_square`----------
@@ -1547,19 +1549,19 @@ with {
 // #### Usage
 //
 // ```
-// polyblep_square(f) : _
+// polyblep_square(freq) : _
 // ```
 //
 // Where:
 //
-// * `f`: frequency in Hz 
+// * `freq`: frequency in Hz 
 //------------------------------------------------------------
 // Author: Jacek Wieczorek
-polyblep_square(f) = naive - polyblep(Q, phase) + polyblep(Q, ma.modulo(phase + 0.5, 1))
+polyblep_square(freq) = naive - polyblep(Q, phase) + polyblep(Q, ma.modulo(phase + 0.5, 1))
 with {
-    phase = phasor(1, f);
+    phase = phasor(1, freq);
     naive = 2 * (phase * 2 : int) - 1;
-    Q = f / ma.SR;
+    Q = freq / ma.SR;
 };
 
 //----------`(os.)polyblep_triangle`----------
@@ -1568,15 +1570,15 @@ with {
 // #### Usage
 //
 // ```
-// polyblep_triangle(f) : _
+// polyblep_triangle(freq) : _
 // ```
 //
 // Where:
 //
-// * `f`: frequency in Hz 
+// * `freq`: frequency in Hz 
 //------------------------------------------------------------
 // Author: Jacek Wieczorek
-polyblep_triangle(f) = polyblep_square(f) : fi.pole(0.999) : *(4 * f / ma.SR);
+polyblep_triangle(freq) = polyblep_square(freq) : fi.pole(0.999) : *(4 * freq / ma.SR);
 
 // end further contributions section
 //########################################################################################
