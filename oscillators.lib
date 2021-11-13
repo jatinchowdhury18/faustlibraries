@@ -531,7 +531,7 @@ lf_sawpos_reset(freq,reset) = phasor_imp(freq, (1-1') | (reset>0), 0);
 
 
 //-----------------`(os.)lf_sawpos_phase_reset`--------------------
-// Simple sawtooth waveform oscillator between 0 and 1.
+// Simple sawtooth waveform oscillator between 0 and 1
 // with phase control and reset.
 //
 // #### Usage
@@ -554,7 +554,7 @@ lf_sawpos_phase_reset(freq,phase,reset) = phasor_imp(freq, (1-1') | (reset>0), p
 
 
 //-----------------`(os.)lf_saw`--------------------
-// Simple sawtooth waveform.
+// Simple sawtooth waveform oscillator between -1 and 1.
 // `lf_saw` is a standard Faust function.
 //
 // #### Usage
